@@ -1,5 +1,7 @@
 const API_ROOT = 'https://jojos-bizarre-api.netlify.app';
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 12000;
+// CORS proxy used as last resort when direct fetch fails
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
 const state = {
   characters: [],
@@ -43,15 +45,59 @@ function bindUI() {
   });
 }
 
-async function fetchWithTimeout(url) {
+// ── API Fetching ────────────────────────────────────────────────────────────
+
+async function fetchWithTimeout(url, ms) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), ms || FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    return res;
+    return await fetch(url, { signal: ctrl.signal });
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchJson(url) {
+  const res = await fetchWithTimeout(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// Fetch all pages from a base URL, stopping gracefully on error
+async function fetchAllPages(baseUrl) {
+  const all = [];
+  for (let page = 1; page <= 30; page++) {
+    const url = page === 1 ? baseUrl : `${baseUrl}?page=${page}`;
+    let items;
+    try {
+      const payload = await fetchJson(url);
+      items = extractItems(payload);
+      if (!items.length) break;
+      all.push(...items);
+      if (!mightHaveMore(payload, page, items.length)) break;
+    } catch (_) {
+      break; // stop pagination on error, keep what we have
+    }
+  }
+  return all;
+}
+
+function mightHaveMore(payload, page, itemCount) {
+  if (!itemCount) return false;
+  if (payload?.next || payload?.links?.next) return true;
+  if (typeof payload?.totalPages === 'number') return page < payload.totalPages;
+  if (typeof payload?.pagination?.totalPages === 'number') return page < payload.pagination.totalPages;
+  if (typeof payload?.meta?.totalPages === 'number') return page < payload.meta.totalPages;
+  return itemCount >= 10; // possibly paginated at 10/page
+}
+
+function extractItems(payload) {
+  if (Array.isArray(payload)) return payload;
+  const keys = ['characters', 'stands', 'data', 'results', 'items'];
+  for (const k of keys) {
+    if (Array.isArray(payload?.[k])) return payload[k];
+  }
+  return [];
 }
 
 async function tryFetchKind(kind) {
@@ -60,26 +106,22 @@ async function tryFetchKind(kind) {
     `${API_ROOT}/${kind}`,
     `${API_ROOT}/api/${kind}`,
   ];
+
+  // 1. Try direct endpoints with pagination
   for (const url of endpoints) {
     try {
-      const res = await fetchWithTimeout(url);
-      if (!res.ok) continue;
-      const payload = await res.json();
-      const items = extractItems(payload, kind);
+      const items = await fetchAllPages(url);
       if (items.length >= 3) return dedupeItems(items);
-    } catch (_) {
-      continue;
-    }
+    } catch (_) {}
   }
-  return [];
-}
 
-function extractItems(payload, kind) {
-  if (Array.isArray(payload)) return payload;
-  const keys = [kind, 'data', 'results', 'items', 'characters', 'stands'];
-  for (const k of keys) {
-    if (Array.isArray(payload?.[k])) return payload[k];
-  }
+  // 2. Try via CORS proxy as last resort
+  try {
+    const proxyUrl = `${CORS_PROXY}${encodeURIComponent(`${API_ROOT}/${kind}`)}`;
+    const items = await fetchAllPages(proxyUrl);
+    if (items.length >= 3) return dedupeItems(items);
+  } catch (_) {}
+
   return [];
 }
 
@@ -118,9 +160,13 @@ function resolveImage(image) {
   if (!image) return '';
   if (/^https?:/.test(image)) return image;
   const clean = String(image).replace(/^\//, '');
+  // If path already contains a directory, prepend API root directly
   if (clean.includes('/')) return `${API_ROOT}/${clean}`;
+  // Otherwise assume it's a filename under /assets/
   return `${API_ROOT}/assets/${clean}`;
 }
+
+// ── Game Logic ──────────────────────────────────────────────────────────────
 
 function unlockAllCatalogCards() {
   for (const item of state.characters) {
@@ -160,36 +206,42 @@ function selectCard(kind) {
   return { ...target, type: kind, rarity, duplicate };
 }
 
-function partColor(item) {
-  const text = item.part || item.chapter || '';
-  if (/Part 1|Phantom/i.test(text)) return '#7b4a2d';
-  if (/Part 2|Battle/i.test(text)) return '#5a7a2d';
-  if (/Part 3|Stardust/i.test(text)) return '#2d3d7a';
-  if (/Part 4|Diamond/i.test(text)) return '#7a2d6e';
-  if (/Part 5|Golden/i.test(text)) return '#6e5a1a';
-  if (/Part 6|Stone/i.test(text)) return '#1a6e4a';
-  if (/Part 7|Steel/i.test(text)) return '#1a4a6e';
-  if (/Part 8|JoJolion/i.test(text)) return '#2d1a6e';
-  return '#2d1a4a';
+// ── Card Rendering ──────────────────────────────────────────────────────────
+
+function partBgColor(item) {
+  const t = item.part || item.chapter || '';
+  if (/Part 1|Phantom/i.test(t))   return 'linear-gradient(135deg,#5c2a10,#1a0a04)';
+  if (/Part 2|Battle/i.test(t))    return 'linear-gradient(135deg,#2a4a10,#0a1a04)';
+  if (/Part 3|Stardust/i.test(t))  return 'linear-gradient(135deg,#1a2a6e,#04081a)';
+  if (/Part 4|Diamond/i.test(t))   return 'linear-gradient(135deg,#6e1a5c,#1a041a)';
+  if (/Part 5|Golden/i.test(t))    return 'linear-gradient(135deg,#5c4a10,#1a1404)';
+  if (/Part 6|Stone/i.test(t))     return 'linear-gradient(135deg,#10504a,#041410)';
+  if (/Part 7|Steel/i.test(t))     return 'linear-gradient(135deg,#10346e,#040c1a)';
+  if (/Part 8|JoJolion/i.test(t))  return 'linear-gradient(135deg,#1a1070,#04041a)';
+  if (/Part 9|JoJoLands/i.test(t)) return 'linear-gradient(135deg,#2a104e,#080416)';
+  return 'linear-gradient(135deg,#2d1a4a,#0f0922)';
 }
 
 function createCard(item, ownedInfo) {
   const card = document.createElement('article');
   const rarity = ownedInfo?.rarity || item.rarity || 'N';
   card.className = `card ${rarity}`;
-  const imgSrc = resolveImage(item.image || item.img || item.avatar);
+  const imgSrc = resolveImage(item.image || item.img || item.avatar || item.imageUrl || '');
   const label = item.japaneseName || item.name || '?';
   const sub = item.name || '';
   const partInfo = item.part || item.chapter || 'Unknown';
   const kindLabel = item.type === 'stand' ? 'STAND' : 'CHARA';
-  const bg = partColor(item);
+  const bg = partBgColor(item);
+  const initial = label.slice(0, 1);
+
+  const placeholder = `<div class="placeholder" style="background:${bg}">${initial}</div>`;
 
   let mediaHtml;
   if (imgSrc) {
-    mediaHtml = `<img src="${imgSrc}" alt="${label}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-<div class="placeholder" style="background:linear-gradient(135deg,${bg},#0f0922);display:none">${label.slice(0,1)}</div>`;
+    mediaHtml = `<img src="${imgSrc}" alt="${label}" loading="lazy"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">${placeholder.replace('display:flex', 'display:none').replace('style="', 'style="display:none;')}`;
   } else {
-    mediaHtml = `<div class="placeholder" style="background:linear-gradient(135deg,${bg},#0f0922)">${label.slice(0,1)}</div>`;
+    mediaHtml = placeholder;
   }
 
   card.innerHTML = `
@@ -218,31 +270,32 @@ function startDraw(kind) {
   back.textContent = 'SP';
   stage.append(back);
   back.animate(
-    [{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }],
+    [{ transform: 'translateX(0)' }, { transform: 'translateX(-7px)' }, { transform: 'translateX(7px)' }, { transform: 'translateX(0)' }],
     { duration: 220, iterations: 4 }
   );
   setTimeout(() => {
     stage.innerHTML = '';
     stage.append(createCard(item, { rarity: item.rarity }));
     const kindJa = kind === 'character' ? 'キャラクター' : 'スタンド';
-    const dupLabel = item.duplicate ? '　/ DUPLICATE' : '';
-    document.getElementById('drawHint').textContent = `${kindJa}を獲得: ${item.japaneseName || item.name}${dupLabel}`;
+    document.getElementById('drawHint').textContent = `${kindJa}を獲得: ${item.japaneseName || item.name}${item.duplicate ? '　/ DUPLICATE' : ''}`;
     renderAll();
   }, 900);
 }
+
+// ── Render Functions ────────────────────────────────────────────────────────
 
 function renderAll() { renderHome(); renderCollection(); renderHistory(); renderSettings(); }
 
 function renderHome() {
   const pill = document.getElementById('apiStatus');
   if (state.apiMode === 'live') {
-    pill.textContent = `API接続: ONLINE（キャラ ${state.characters.length}体 / スタンド ${state.stands.length}体）`;
+    pill.textContent = `API: ONLINE — キャラ ${state.characters.length}体 / スタンド ${state.stands.length}体`;
     pill.style.borderColor = '#2df4a7';
   } else if (state.apiMode === 'fallback') {
-    pill.textContent = `ローカルデータ使用中（キャラ ${state.characters.length}体 / スタンド ${state.stands.length}体）`;
+    pill.textContent = `ローカルデータ — キャラ ${state.characters.length}体 / スタンド ${state.stands.length}体`;
     pill.style.borderColor = '#ffd86b';
   } else {
-    pill.textContent = 'API接続中...';
+    pill.textContent = 'データ読み込み中...';
   }
   document.getElementById('dailyState').textContent =
     `キャラ: ${canDraw('character') ? '未取得' : '今日は取得済み'} / スタンド: ${canDraw('stand') ? '未取得' : '今日は取得済み'}`;
@@ -254,23 +307,27 @@ function renderDestinyCards() {
   const sd = data.drawHistory.find(x => x.date === today() && x.kind === 'stand');
   const charBox = document.getElementById('destinyCharacter');
   const standBox = document.getElementById('destinyStand');
+
   if (cd) {
     const item = state.characters.find(c => c.id === cd.id);
     charBox.innerHTML = '';
+    charBox.className = '';
     if (item) charBox.appendChild(createCard(item, { rarity: cd.rarity }));
     else charBox.textContent = cd.name;
   } else {
     charBox.className = 'card-back mini';
-    charBox.textContent = 'SP';
+    charBox.innerHTML = 'SP';
   }
+
   if (sd) {
     const item = state.stands.find(s => s.id === sd.id);
     standBox.innerHTML = '';
+    standBox.className = '';
     if (item) standBox.appendChild(createCard(item, { rarity: sd.rarity }));
     else standBox.textContent = sd.name;
   } else {
     standBox.className = 'card-back mini';
-    standBox.textContent = 'SP';
+    standBox.innerHTML = 'SP';
   }
 }
 
@@ -299,19 +356,20 @@ function renderCollection() {
   grid.classList.remove('hidden');
   const src = state.tab === 'characters' ? state.characters : state.stands;
   const owned = state.tab === 'characters' ? data.ownedCharacters : data.ownedStands;
+  let shown = 0;
   src.forEach(item => {
     const info = owned[item.id];
     if (filter !== 'ALL' && info?.rarity !== filter) return;
     grid.append(createCard(item, info));
+    shown++;
   });
   document.getElementById('characterRate').textContent = `キャラ ${Object.keys(data.ownedCharacters).length} / ${state.characters.length}`;
   document.getElementById('standRate').textContent = `スタンド ${Object.keys(data.ownedStands).length} / ${state.stands.length}`;
 }
 
 function renderHistory() {
-  const list = document.getElementById('historyList');
-  list.innerHTML = data.drawHistory.slice(0, 60).map(h =>
-    `<div class="panel"><b>${h.date}</b> ${h.kind === 'character' ? 'キャラ' : 'スタンド'}: ${h.name} <span>${h.rarity}</span>${h.duplicate ? ' DUPLICATE' : ''}</div>`
+  document.getElementById('historyList').innerHTML = data.drawHistory.slice(0, 60).map(h =>
+    `<div class="panel"><b>${h.date}</b> ${h.kind === 'character' ? 'キャラ' : 'スタンド'}: ${h.name} <span class="badge">${h.rarity}</span>${h.duplicate ? ' DUPLICATE' : ''}</div>`
   ).join('') || '<p>まだ履歴がありません。</p>';
 }
 
@@ -329,27 +387,30 @@ function switchView(view) {
 
 function openDetail(item, rarity) {
   const d = document.getElementById('detailBody');
-  const hideKeys = new Set(['id', '_id', 'image', 'img', 'avatar', 'type']);
+  const hideKeys = new Set(['id', '_id', 'image', 'img', 'avatar', 'imageUrl', 'type']);
+  const imgSrc = resolveImage(item.image || item.img || item.avatar || item.imageUrl || '');
+  const imgTag = imgSrc
+    ? `<img src="${imgSrc}" style="width:100%;border-radius:10px;margin-bottom:12px;object-fit:cover;max-height:260px" loading="lazy" onerror="this.remove()">`
+    : '';
+
   const rows = Object.entries(item)
     .filter(([k, v]) => !hideKeys.has(k) && v !== '' && v !== null && v !== undefined)
     .map(([k, v]) => {
       const val = Array.isArray(v) ? v.join('　/　') : String(v);
       return `<p><b>${labelFor(k)}:</b> ${val}</p>`;
     }).join('');
-  const imgSrc = resolveImage(item.image || item.img || item.avatar);
-  const imgTag = imgSrc ? `<img src="${imgSrc}" style="width:100%;border-radius:10px;margin-bottom:10px" onerror="this.remove()">` : '';
-  d.innerHTML = `${imgTag}<h3>${item.japaneseName || item.name}</h3><p>${item.name || ''}</p><p>RARITY: <b>${rarity}</b></p>${rows}`;
+
+  d.innerHTML = `${imgTag}<h3>${item.japaneseName || item.name}</h3><p style="color:#c0b8d8">${item.name || ''}</p><p>RARITY: <b style="color:var(--gold)">${rarity}</b></p>${rows}`;
   document.getElementById('detailModal').showModal();
 }
 
 function labelFor(key) {
   const labels = {
-    japaneseName: '日本語名', chapter: '登場作品', part: 'Part',
-    abilities: '能力', standUser: 'スタンド使い', battlecry: 'バトルクライ',
-    catchphrase: 'セリフ', nationality: '国籍', living: '生存',
-    isHuman: '人間', destructivePower: '破壊力', speed: 'スピード',
-    range: '射程距離', durability: '持続力', precision: '精密動作性',
-    developmentPotential: '成長性',
+    japaneseName:'日本語名', chapter:'登場作品', part:'Part',
+    abilities:'能力', standUser:'スタンド使い', battlecry:'バトルクライ',
+    catchphrase:'セリフ', nationality:'国籍', living:'生存', isHuman:'人間',
+    destructivePower:'破壊力', speed:'スピード', range:'射程距離',
+    durability:'持続力', precision:'精密動作性', developmentPotential:'成長性',
   };
   return labels[key] || key;
 }
