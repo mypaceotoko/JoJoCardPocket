@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Stand Pocket</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-fx"></div>
+  <header class="hero">
+    <p class="hero-kicker">奇妙でスタイリッシュな毎日ドロー</p>
+    <h1>Stand Pocket</h1>
+    <p class="subtitle">今日の運命は、誰のスタンドか。</p>
+    <p id="apiStatus" class="status-pill">API接続中...</p>
+  </header>
+
+  <main>
+    <section id="home" class="view active">
+      <div class="panel">
+        <h2>今日の運命カード</h2>
+        <div class="destiny-grid">
+          <div id="destinyCharacter" class="card-back mini">SP</div>
+          <div id="destinyStand" class="card-back mini">SP</div>
+        </div>
+        <div class="draw-actions">
+          <button id="drawCharacterBtn" data-kind="character" class="btn neon">キャラカードを引く</button>
+          <button id="drawStandBtn" data-kind="stand" class="btn neon alt">スタンドカードを引く</button>
+        </div>
+        <p id="dailyState" class="note"></p>
+      </div>
+    </section>
+
+    <section id="draw" class="view">
+      <div class="panel draw-panel">
+        <h2>カード開封</h2>
+        <p id="drawHint">下のボタンからカードを選択して開封してください。</p>
+        <div id="onomatopoeia" class="onomatopoeia">ゴゴゴゴ… ドドドド…</div>
+        <div id="drawStage" class="draw-stage"></div>
+      </div>
+    </section>
+
+    <section id="collection" class="view">
+      <div class="panel">
+        <div class="tabs">
+          <button class="tab active" data-tab="characters">キャラクター</button>
+          <button class="tab" data-tab="stands">スタンド</button>
+          <button class="tab" data-tab="today">今日の結果</button>
+        </div>
+        <div class="collection-meta">
+          <span id="characterRate"></span>
+          <span id="standRate"></span>
+          <select id="rarityFilter"><option value="ALL">全レア</option><option>N</option><option>R</option><option>SR</option><option>SSR</option><option>UR</option></select>
+        </div>
+        <div id="collectionGrid" class="grid"></div>
+        <div id="todayResult" class="today-result hidden"></div>
+      </div>
+    </section>
+
+    <section id="history" class="view"><div class="panel"><h2>履歴</h2><div id="historyList"></div></div></section>
+    <section id="settings" class="view">
+      <div class="panel">
+        <h2>設定</h2>
+        <p id="storageState"></p>
+        <button id="resetDate" class="btn">日付制限だけリセット</button>
+        <button id="resetAll" class="btn danger">保存データを全削除</button>
+        <p class="note">本アプリは非公式ファンメイドです。権利は各権利者に帰属します。</p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button data-view="home" class="active">🏠<span>Home</span></button>
+    <button data-view="draw">✨<span>Draw</span></button>
+    <button data-view="collection">🃏<span>Collection</span></button>
+    <button data-view="history">📜<span>History</span></button>
+    <button data-view="settings">⚙️<span>Settings</span></button>
+  </nav>
+
+  <dialog id="detailModal"><div id="detailBody"></div><button id="closeModal" class="btn">閉じる</button></dialog>
+
+  <script src="fallback-data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
