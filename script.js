@@ -9,7 +9,8 @@ const state = {
   apiMode: 'loading',
   activeView: 'home',
   drawKind: null,
-  tab: 'characters'
+  tab: 'characters',
+  showOwnedOnly: false
 };
 
 const KEY = 'standPocketData';
@@ -37,6 +38,13 @@ function bindUI() {
   document.getElementById('resetDate').onclick = () => { data.lastCharacterDrawDate = ''; data.lastStandDrawDate = ''; saveData(); renderHome(); };
   document.getElementById('closeModal').onclick = () => document.getElementById('detailModal').close();
   document.getElementById('rarityFilter').onchange = renderCollection;
+  document.getElementById('ownedToggle').onclick = () => {
+    state.showOwnedOnly = !state.showOwnedOnly;
+    const btn = document.getElementById('ownedToggle');
+    btn.textContent = state.showOwnedOnly ? '持ってるカードのみ' : '全カード';
+    btn.classList.toggle('active', state.showOwnedOnly);
+    renderCollection();
+  };
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
@@ -197,8 +205,12 @@ function selectCard(kind) {
   const existing = owned[target.id];
   const rarity = existing?.rarity || pickRarity();
   const duplicate = !!existing;
-  if (existing) existing.duplicateCount = (existing.duplicateCount || 0) + 1;
-  else owned[target.id] = { id: target.id, type: kind, rarity, obtainedAt: new Date().toISOString(), duplicateCount: 0 };
+  if (existing) {
+    existing.duplicateCount = (existing.duplicateCount || 0) + 1;
+    existing.obtained = true;
+  } else {
+    owned[target.id] = { id: target.id, type: kind, rarity, obtainedAt: new Date().toISOString(), duplicateCount: 0, obtained: true };
+  }
   if (kind === 'character') data.lastCharacterDrawDate = today();
   else data.lastStandDrawDate = today();
   data.drawHistory.unshift({ date: today(), kind, id: target.id, name: target.japaneseName || target.name || '???', rarity, duplicate });
@@ -359,6 +371,8 @@ function renderCollection() {
   let shown = 0;
   src.forEach(item => {
     const info = owned[item.id];
+    const isOwned = info?.obtained === true || (info?.duplicateCount ?? 0) > 0;
+    if (state.showOwnedOnly && !isOwned) return;
     if (filter !== 'ALL' && info?.rarity !== filter) return;
     grid.append(createCard(item, info));
     shown++;
