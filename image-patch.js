@@ -3,13 +3,26 @@
   const BASE = 'https://jojos-bizarre-api.netlify.app/assets/';
   const WIKI = 'https://static.jojowiki.com/images/';
 
-  // ── Character images (jojos-bizarre-api CDN) ────────────────────────────
+  // ── Character images ─────────────────────────────────────────────────────
+  // Relative filenames → prepend BASE (jojos-bizarre-api CDN, Parts 1-6 anime)
+  // Full https:// URLs → used as-is (JoJo Wiki manga infoboxes, Parts 7-9)
   const CHAR_IMGS = {
+    // Part 1
     c1:'jonathan.webp', c2:'dio.webp', c3:'zeppeli.webp',
-    c4:'speedwagon.png', c5:'erina.png', c7:'bruford.webp', c8:'tarkus.webp',
+    c4:'speedwagon.png', c5:'erina.png',
+    c6:'george.webp',
+    c7:'bruford.webp', c8:'tarkus.webp',
+    c9:'jacktheripper.webp',
+    c10:'dario.webp',
+    // Part 2
     c11:'joseph.webp', c12:'caesar.png', c13:'lisalisa.webp',
     c14:'wamuu.webp', c15:'esidisi.webp', c16:'kars.webp',
     c17:'santana.png', c18:'stronheim.png',
+    c19:'smokey.webp',
+    c20:'suzieq.webp',
+    c21:'loggins.webp',
+    c22:'messina.webp',
+    // Part 3
     c23:'jotaro.png', c24:'kakyoin.webp', c25:'polnareff.png',
     c26:'avdol.webp', c27:'iggy.webp', c28:'holhorse.png',
     c29:'rubbersoul.png', c30:'devo.webp', c31:'nena.webp', c32:'zz.webp',
@@ -18,31 +31,70 @@
     c39:'alessi.webp', c40:'mariah.webp', c41:'danieldarby.webp',
     c42:'terencedarby.png', c43:'vanillaice.png', c44:'ndoul.png',
     c45:'oingo.png', c46:'boingo.png', c47:'petshop.png', c48:'anubis.png',
+    c140:'geil.webp', c141:'grayfly.png', c142:'captain.png',
+    c143:'forever.png', c144:'devo.webp',
+    c148:'jotaro.png',
+    // Part 4
     c49:'josuke.png', c50:'koichi.png', c51:'okuyasu.webp',
     c52:'rohan.png', c53:'kira.png', c54:'yukako.png',
     c55:'toshikazu.jpg', c56:'tamami.png', c57:'tonio.png',
     c58:'shigechi.png', c59:'akira.webp', c60:'yuya.png',
+    c61:'hayato.webp',
     c62:'yoshihorokira.webp', c63:'angelo.webp', c64:'keicho.png',
     c65:'aya.png', c66:'ken.png', c67:'miyamoto.png', c68:'toyohiro.png',
+    c146:'mikitaka.png', c147:'masazo.png',
+    // Part 5
     c69:'giorno.png', c70:'bucciarati.png', c71:'guido.png',
     c72:'narancia.png', c73:'fugo.png', c74:'trish.png',
     c75:'diavolo.png', c76:'doppio.png', c77:'abbacchio.png',
     c78:'ghiaccio.png', c79:'risotto.png', c80:'prosciutto.webp',
     c81:'peschi.png', c82:'illuso.webp', c83:'formaggio.png',
-    c84:'melone.png', c85:'squalo.png', c87:'ciocco.png', c88:'secco.png',
+    c84:'melone.png', c85:'squalo.png',
+    c86:'tiziano.webp',
+    c87:'ciocco.png', c88:'secco.png',
+    c149:'carne.png',
+    c150:'sorbet.webp',
+    c151:'gelato.webp',
+    // Part 2 extra
+    c145:'wiredbeck.webp',
+    c155:'fritz.webp',
+    // Part 6
     c89:'jolyne.webp', c90:'ermes.webp', c91:'foofighters.png',
     c92:'narciso.png', c93:'weather.png', c94:'pucci.webp',
     c95:'emporio.png', c96:'viviano.webp', c97:'kenzou.png',
     c98:'DG.webp', c99:'donatello.png', c100:'miucca.png',
-    c101:'rikiel.webp', c102:'sportsmaxx.png', c153:'gwess.webp',
-    c140:'geil.webp', c141:'grayfly.png', c142:'captain.png',
-    c143:'forever.png', c144:'devo.webp',
-    c146:'mikitaka.png', c147:'masazo.png', c148:'jotaro.png',
-    c149:'carne.png', c152:'pucci.webp',
+    c101:'rikiel.webp', c102:'sportsmaxx.png',
+    c152:'pucci.webp', c153:'gwess.webp',
+    // Part 7 — Steel Ball Run (JoJo Wiki manga infoboxes)
+    c103:WIKI+'b/b7/latest/20230129074253/Johnny_Joestar_Infobox_Manga.png',
+    c104:WIKI+'7/76/latest/20200816174510/Gyro_Zeppeli_Infobox_Manga.png',
+    c105:WIKI+'4/4b/latest/20200913222640/Diego_Brando_Infobox_Manga.png',
+    c106:WIKI+'6/6b/latest/20201115235722/Valentine_Normal_Infobox_Manga.png',
+    c107:WIKI+'c/cf/latest/20221209133219/Lucy_Steel_Infobox_Manga.png',
+    c108:WIKI+'6/61/latest/20210524121536/Hot_Pants_Infobox_Manga.png',
+    c109:WIKI+'9/95/latest/20211002195746/Mountain_Tim_Infobox_Manga.png',
+    c110:WIKI+'8/81/latest/20231112044914/Pocoloco_Infobox_Manga.png',
+    c111:WIKI+'4/4f/latest/20211002194504/Sandman_Infobox_Manga.png',
+    c113:WIKI+'7/75/latest/20220408142007/Oyecomova_Infobox_Manga.png',
+    c115:WIKI+'b/bd/latest/20220830215300/Axl_RO_Infobox_Manga.png',
+    c116:WIKI+'f/fc/latest/20220107134909/Ringo_Roadagain_Infobox_Manga.png',
+    c117:WIKI+'0/01/latest/20191015220158/Blackmore_Infobox_Manga.png',
+    c154:WIKI+'e/ea/latest/20191015220439/Marco_Infobox_Manga.png',
+    c156:WIKI+'e/e8/latest/20191015215421/Mike_O._Infobox_Manga.png',
+    // Part 8 — JoJolion (JoJo Wiki manga infoboxes)
+    c120:WIKI+'3/3a/latest/20210617175837/Josuke_JJL_Infobox_Manga.png',
+    c121:WIKI+'a/a7/latest/20221208021338/Yasuho_Hirose_Infobox_Manga.png',
+    c122:WIKI+'5/52/latest/20210103225901/Norisuke_Higashikata_IV_Infobox_Manga.png',
+    c123:WIKI+'d/d8/latest/20210103164115/Tsurugi_Higashikata_Infobox_Manga.png',
+    c124:WIKI+'9/99/latest/20221228204750/Joshu_Higashikata_Infobox_Manga.png',
+    c125:WIKI+'0/0e/latest/20220111044306/Hato_Higashikata_Infobox_Manga.png',
+    c126:WIKI+'2/22/latest/20210826172034/Daiya_Higashikata_Infobox_Manga.png',
+    c127:WIKI+'2/20/latest/20210418195924/Jobin_Higashikata_Infobox_Manga.png',
+    c128:WIKI+'3/3e/latest/20210824154504/Rai_Mamezuku_Infobox_Manga.png',
+    c157:WIKI+'3/3e/latest/20210824154504/Rai_Mamezuku_Infobox_Manga.png',
   };
 
   // ── Stand images (JoJo Wiki) ────────────────────────────────────────────
-  // Full URLs required because each file has a unique hash path on the wiki.
   const STAND_IMGS = {
     // Part 2
     s1: WIKI+'0/0a/latest/20210531212424/Hermit_Purple_SC_Infobox_Anime.png',
@@ -140,13 +192,17 @@
 
   // ── Catchphrases ────────────────────────────────────────────────────────
   const CATCHPHRASES = {
+    c1:'紳士たるもの…',
+    c2:'無駄無駄無駄！',
     c3:'波紋の修行を授けよう', c4:'漢泣きするぜ…！',
     c7:'誉れある武人として散ろう',
+    c11:'おい！おまえら変なもん食うなよ！',
     c12:'ブライカッター！',
     c14:'男の誇りをかけて！全力で来い！',
     c15:'ウォォォン！（泣く）',
     c16:'究極生命体に進化した！',
     c18:'ドイツ科学は世界一ィィィ！',
+    c23:'やれやれだぜ',
     c25:'俺の矜持にかけて！',
     c28:'銃使いは常にNo.2じゃなきゃいけない',
     c33:'ジョジョォォォ！この恨み！',
@@ -155,11 +211,14 @@
     c42:'魂は…すでにもらった',
     c43:'ディオ様のためならァ！',
     c44:'目は使わぬ…耳で感じる',
+    c49:'グレイトだぜ！',
     c50:'バリバリバリ！',
+    c53:'静かに暮らしたいんだ…',
     c54:'好きなのに…なんで！',
     c58:'友達からもらった！',
     c64:'強くなれよ…億泰',
     c65:'美しくなりたい？',
+    c69:'黄金の精神！',
     c71:'4が嫌いだ！絶対嫌だ！',
     c73:'パープル・ヘイズ！',
     c75:'誰もオレの過去を知ることはできない！',
@@ -171,14 +230,17 @@
     c81:'プロシュートの兄貴ィィ！',
     c87:'ブラーヴォ！ブラーヴォ！',
     c88:'シェフィィィィ！',
+    c89:'ストーン・フリー！',
     c90:'キッス！',
     c92:'ジョルノ、娘を俺にくれ',
     c94:'天国へ行こう',
     c95:'…生き残れ',
     c103:'タスクアクト！',
+    c104:'鉄球の音を聞け！',
     c105:'Muda Muda Muda!',
+    c106:'もし私がしなければ、他の誰かがするだろう',
     c116:'真の男とは自分の行動に責任を持つ者だ',
-    c120:'ソフト＆ウェット！ワワワワ！',
+    c120:'ソフト＆ウェット！ゴゴゴゴ！',
     c129:'ワンダー・オブ・U…',
     c135:'俺は成功者になる',
   };
@@ -186,7 +248,11 @@
   if (!window.FALLBACK_DATA) return;
 
   window.FALLBACK_DATA.characters.forEach(function (c) {
-    if (CHAR_IMGS[c.id])    c.image       = BASE + CHAR_IMGS[c.id];
+    var img = CHAR_IMGS[c.id];
+    if (img) {
+      // Full URL (Parts 7-9 wiki images) → use as-is; relative → prepend BASE
+      c.image = (img.indexOf('https://') === 0) ? img : BASE + img;
+    }
     if (CATCHPHRASES[c.id]) c.catchphrase = CATCHPHRASES[c.id];
   });
 
