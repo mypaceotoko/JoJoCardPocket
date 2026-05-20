@@ -390,7 +390,7 @@ function openDetail(item, rarity) {
   const hideKeys = new Set(['id', '_id', 'image', 'img', 'avatar', 'imageUrl', 'type']);
   const imgSrc = resolveImage(item.image || item.img || item.avatar || item.imageUrl || '');
   const imgTag = imgSrc
-    ? `<img src="${imgSrc}" style="width:100%;border-radius:10px;margin-bottom:12px;object-fit:cover;max-height:260px" loading="lazy" onerror="this.remove()">`
+    ? `<img src="${imgSrc}" style="width:100%;border-radius:10px;margin-bottom:12px;object-fit:contain;max-height:55vh;background:#0d0720" loading="lazy" onerror="this.remove()">`
     : '';
 
   const rows = Object.entries(item)
