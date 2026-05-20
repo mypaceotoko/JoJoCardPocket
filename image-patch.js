@@ -1,6 +1,7 @@
-// Patches FALLBACK_DATA characters with confirmed image URLs from jojos-bizarre-api.netlify.app
+// Patches FALLBACK_DATA characters with image URLs and catchphrases
 (function () {
   const BASE = 'https://jojos-bizarre-api.netlify.app/assets/';
+
   const CHAR_IMGS = {
     // Part 1
     c1:  'jonathan.webp',
@@ -118,9 +119,65 @@
     c152:'pucci.webp',
   };
 
+  // Catchphrases — only characters with memorable/famous lines
+  const CATCHPHRASES = {
+    // Part 1
+    c3:  '波紋の修行を授けよう',
+    c4:  '漢泣きするぜ…！',
+    c7:  '誉れある武人として散ろう',
+    // Part 2
+    c12: 'ブライカッター！',
+    c14: '男の誇りをかけて！全力で来い！',
+    c15: 'ウォォォン！（泣く）',
+    c16: '究極生命体に進化した！',
+    c18: 'ドイツ科学は世界一ィィィ！',
+    // Part 3
+    c25: '俺の矜持にかけて！',
+    c28: '銃使いは常にNo.2じゃなきゃいけない',
+    c33: 'ジョジョォォォ！この恨み！',
+    c34: 'ガハハ！困ったな！',
+    c41: '魂を賭けないか？',
+    c42: '魂は…すでにもらった',
+    c43: 'ディオ様のためならァ！',
+    c44: '目は使わぬ…耳で感じる',
+    // Part 4
+    c50: 'バリバリバリ！',
+    c54: '好きなのに…なんで！',
+    c58: '友達からもらった！',
+    c64: '強くなれよ…億泰',
+    c65: '美しくなりたい？',
+    // Part 5
+    c71: '4が嫌いだ！絶対嫌だ！',
+    c73: 'パープル・ヘイズ！',
+    c75: '誰もオレの過去を知ることはできない！',
+    c76: 'ドッピオここにいます…',
+    c77: '死んだ仲間は裏切れない',
+    c78: 'ホワイト・アルバム！ゴゴゴゴ！',
+    c79: '消えろ…',
+    c80: '覚悟はいいか？',
+    c81: 'プロシュートの兄貴ィィ！',
+    c87: 'ブラーヴォ！ブラーヴォ！',
+    c88: 'シェフィィィィ！',
+    // Part 6
+    c90: 'キッス！',
+    c92: 'ジョルノ、娘を俺にくれ',
+    c94: '天国へ行こう',
+    c95: '…生き残れ',
+    // Part 7
+    c103: 'タスクアクト！',
+    c105: 'Muda Muda Muda!',
+    c116: '真の男とは自分の行動に責任を持つ者だ',
+    // Part 8
+    c120: 'ソフト＆ウェット！ワワワワ！',
+    c129: 'ワンダー・オブ・U…',
+    // Part 9
+    c135: '俺は成功者になる',
+  };
+
   if (window.FALLBACK_DATA && window.FALLBACK_DATA.characters) {
     window.FALLBACK_DATA.characters.forEach(function (c) {
-      if (CHAR_IMGS[c.id]) c.image = BASE + CHAR_IMGS[c.id];
+      if (CHAR_IMGS[c.id])     c.image       = BASE + CHAR_IMGS[c.id];
+      if (CATCHPHRASES[c.id])  c.catchphrase = CATCHPHRASES[c.id];
     });
   }
 })();
