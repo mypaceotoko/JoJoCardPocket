@@ -314,6 +314,24 @@ main { position: relative; z-index: 1; }
   font-size: .8rem;
 }
 
+.toggle-btn {
+  background: #1c1237;
+  color: #d0c8f0;
+  border: 1px solid #6549a4;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: .8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toggle-btn.active {
+  background: #50308f;
+  color: #fff;
+  border-color: var(--neon);
+  box-shadow: 0 0 8px rgba(53,245,255,.35);
+}
+
 /* Onomatopoeia */
 .onomatopoeia {
   position: absolute;
